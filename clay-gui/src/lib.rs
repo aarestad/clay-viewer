@@ -11,7 +11,8 @@ use sdl2::{
 
 use std::time::Duration;
 
-use clay_core::{Worker};
+use clay_core::{Context, Worker, Screen};
+
 
 #[allow(dead_code)]
 pub struct Window {
@@ -22,7 +23,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new(size: (usize, usize)) -> Result<Self, String> {
+    pub fn new(size: (usize, usize)) -> clay_core::Result<Self> {
         let context = sdl2::init()?;
         let video = context.video()?;
      
@@ -35,8 +36,8 @@ impl Window {
         Ok(Self { context, video, size, canvas })
     }
 
-    pub fn start(&mut self, worker: &mut Worker) -> Result<(), String> {
-        let mut screen = worker.create_screen(self.size).map_err(|e| e.to_string())?;
+    pub fn start(&mut self, context: &Context, worker: &Worker) -> clay_core::Result<()> {
+        let mut screen = Screen::new(context, self.size).map_err(|e| e.to_string())?;
 
         let texture_creator = self.canvas.texture_creator();
         let mut texture = texture_creator.create_texture(
@@ -60,9 +61,11 @@ impl Window {
                 }
             }
 
-            worker.render(&mut screen).map_err(|e| e.to_string())?;
-            let data = screen.read().map_err(|e| e.to_string())?;
-            texture.update(None, &data, 4*(screen.size().0 as usize)).map_err(|e| e.to_string())?;
+            worker.render(&mut screen)?;
+            let data = screen.read()?;
+
+            texture.update(None, &data, 4*(screen.dims().0 as usize))
+            .map_err(|e| e.to_string())?;
             self.canvas.copy(&texture, None, None)?;
 
             self.canvas.present();
@@ -72,4 +75,3 @@ impl Window {
         Ok(())
     }
 } 
-
