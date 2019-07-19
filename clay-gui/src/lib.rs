@@ -1,5 +1,9 @@
-use std::thread;
+mod motion;
 
+use std::{
+    time::{Instant, Duration},
+    thread,
+};
 use sdl2::{
     self,
     Sdl, VideoSubsystem,
@@ -8,11 +12,8 @@ use sdl2::{
     event::Event,
     keyboard::Keycode,
 };
-
-use std::time::Duration;
-
 use clay_core::{Context, Worker, Screen};
-
+use motion::Motion;
 
 #[allow(dead_code)]
 pub struct Window {
@@ -48,28 +49,38 @@ impl Window {
         )
         .map_err(|e| e.to_string())?;
 
+        let mut motion = Motion::new();
+
+        let instant = Instant::now();
+        let mut now = instant.elapsed();
+
         let mut event_pump = self.context.event_pump()?;
         'main: loop {
-            self.canvas.clear();
             for event in event_pump.poll_iter() {
                 match event {
-                    Event::Quit {..} |
-                    Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                        break 'main;
+                    Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'main,
+                    other => {
+                        motion.handle(&other);
                     },
-                    _ => {}
                 }
             }
 
-            worker.render(&mut screen)?;
+            worker.render(&mut screen, motion.pos)?;
             let data = screen.read()?;
 
             texture.update(None, &data, 4*(screen.dims().0 as usize))
             .map_err(|e| e.to_string())?;
-            self.canvas.copy(&texture, None, None)?;
 
+            //self.canvas.clear();
+            self.canvas.copy(&texture, None, None)?;
             self.canvas.present();
+
             thread::sleep(Duration::from_millis(20));
+            
+            let new_now = instant.elapsed();
+            let dt = new_now - now;
+            motion.step(dt);
+            now = new_now;
         }
 
         Ok(())

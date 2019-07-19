@@ -14,5 +14,6 @@ keywords = ["ray-tracing", "path-tracing", "opencl"]
 categories = ["graphics", "rendering", "multimedia"]
 
 [dependencies]
-sdl2 = "0.32"
 clay-core = { path = "../clay-core" }
+sdl2 = "0.32"
+vecmat = "0.4.0"
