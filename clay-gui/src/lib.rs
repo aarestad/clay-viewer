@@ -12,7 +12,8 @@ use sdl2::{
     event::Event,
     keyboard::Keycode,
 };
-use clay_core::{Context, Worker, Screen};
+use vecmat::vec::*;
+use clay_core::{Context, Screen};
 use motion::Motion;
 
 #[allow(dead_code)]
@@ -37,7 +38,8 @@ impl Window {
         Ok(Self { context, video, size, canvas })
     }
 
-    pub fn start(&mut self, context: &Context, worker: &Worker) -> clay_core::Result<()> {
+    pub fn start<F>(&mut self, context: &Context, mut render: F) -> clay_core::Result<()>
+    where F: FnMut(&mut Screen, Vec3<f64>) -> clay_core::Result<()> {
         let mut screen = Screen::new(context, self.size).map_err(|e| e.to_string())?;
 
         let texture_creator = self.canvas.texture_creator();
@@ -65,7 +67,7 @@ impl Window {
                 }
             }
 
-            worker.render(&mut screen, motion.pos)?;
+            render(&mut screen, motion.pos)?;
             let data = screen.read()?;
 
             texture.update(None, &data, 4*(screen.dims().0 as usize))
