@@ -85,6 +85,8 @@ impl Motion {
     }
 
     pub fn handle_mouse(&mut self, mouse: &RelativeMouseState) {
+        println!("{}, {}", mouse.x(), mouse.y());
+
         self.phi += self.sens*(mouse.x() as f64);
         let t = (self.phi/(2.0*PI)).floor() as i32;
         if t != 0 {

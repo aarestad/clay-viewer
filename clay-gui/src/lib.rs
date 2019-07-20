@@ -62,7 +62,7 @@ impl Window {
 
         let texture_creator = self.canvas.texture_creator();
         let mut texture = texture_creator.create_texture(
-            PixelFormatEnum::RGBA32,
+            PixelFormatEnum::RGB24,
             TextureAccess::Streaming,
             self.size.0 as u32,
             self.size.1 as u32,
@@ -93,19 +93,21 @@ impl Window {
                 }
                 motion.handle_keys(&event);
             }
+            let rms = event_pump.relative_mouse_state();
             if self.capture {
                 if !drop_mouse {
-                    motion.handle_mouse(&event_pump.relative_mouse_state());
+                    motion.handle_mouse(&rms);
                 } else {
-                    event_pump.relative_mouse_state();
                     drop_mouse = false;
                 }
+            } else if event_pump.mouse_state().left() {
+                motion.handle_mouse(&rms);
             }
 
             render(&mut screen, motion.pos, motion.map())?;
             let data = screen.read()?;
 
-            texture.update(None, &data, 4*(screen.dims().0 as usize))
+            texture.update(None, &data, 3*(screen.dims().0 as usize))
             .map_err(|e| e.to_string())?;
 
             //self.canvas.clear();
