@@ -1,8 +1,7 @@
 mod motion;
 
 use std::{
-    time::{Instant, Duration},
-    thread,
+    time::{Instant},
 };
 use sdl2::{
     self,
@@ -12,7 +11,10 @@ use sdl2::{
     event::Event,
     keyboard::Keycode,
 };
-use vecmat::vec::*;
+use vecmat::{
+    vec::*,
+    mat::*,
+};
 use clay_core::{Context, Screen};
 use motion::Motion;
 
@@ -22,6 +24,7 @@ pub struct Window {
     video: VideoSubsystem,
     size: (usize, usize),
     canvas: WindowCanvas,
+    capture: bool,
 }
 
 impl Window {
@@ -35,11 +38,26 @@ impl Window {
      
         let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
-        Ok(Self { context, video, size, canvas })
+        context.mouse().set_relative_mouse_mode(true);
+
+        let mut self_ = Self {
+            context, video,
+            size, canvas,
+            capture: false,
+        };
+
+        self_.toggle_capture();
+
+        Ok(self_)
+    }
+
+    fn toggle_capture(&mut self) {
+        self.capture = !self.capture;
+        self.context.mouse().set_relative_mouse_mode(self.capture);
     }
 
     pub fn start<F>(&mut self, context: &Context, mut render: F) -> clay_core::Result<()>
-    where F: FnMut(&mut Screen, Vec3<f64>) -> clay_core::Result<()> {
+    where F: FnMut(&mut Screen, Vec3<f64>, Mat3<f64>) -> clay_core::Result<()> {
         let mut screen = Screen::new(context, self.size).map_err(|e| e.to_string())?;
 
         let texture_creator = self.canvas.texture_creator();
@@ -52,7 +70,7 @@ impl Window {
         .map_err(|e| e.to_string())?;
 
         let mut motion = Motion::new();
-
+        let mut drop_mouse = true;
         let instant = Instant::now();
         let mut now = instant.elapsed();
 
@@ -60,14 +78,31 @@ impl Window {
         'main: loop {
             for event in event_pump.poll_iter() {
                 match event {
-                    Event::Quit {..} | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => break 'main,
-                    other => {
-                        motion.handle(&other);
+                    Event::Quit {..} => break 'main,
+                    Event::KeyDown { keycode: Some(key), .. } => match key {
+                        Keycode::Escape => break 'main,
+                        Keycode::Tab => {
+                            self.toggle_capture();
+                            if self.capture {
+                                drop_mouse = true;
+                            }
+                        },
+                        _ => (),
                     },
+                    _ => (),
+                }
+                motion.handle_keys(&event);
+            }
+            if self.capture {
+                if !drop_mouse {
+                    motion.handle_mouse(&event_pump.relative_mouse_state());
+                } else {
+                    event_pump.relative_mouse_state();
+                    drop_mouse = false;
                 }
             }
 
-            render(&mut screen, motion.pos)?;
+            render(&mut screen, motion.pos, motion.map())?;
             let data = screen.read()?;
 
             texture.update(None, &data, 4*(screen.dims().0 as usize))
@@ -77,7 +112,7 @@ impl Window {
             self.canvas.copy(&texture, None, None)?;
             self.canvas.present();
 
-            thread::sleep(Duration::from_millis(20));
+            //thread::sleep(Duration::from_millis(20));
             
             let new_now = instant.elapsed();
             let dt = new_now - now;

@@ -2,6 +2,27 @@
 
 User interface for [Clay](https://github.com/nthend/clay).
 
+## Usage
+
+### Controls
+
++ `W` or `↑` - move forward
++ `S` or `↓` - move backward
++ `A` or `←` - move left
++ `D` or `→` - move right
+
++ `Space` - move up
++ `LShift` - move down
+
++ `E` - tilt clockwise (only in zero-gravity mode)
++ `Q` - tilt counter-clockwise (only in zero-gravity mode)
+
++ `Tab` - toggle capture mode
++ `Esc` - exit
+
+In capture mode you can use mouse to look around.
+
+
 ## License
 
 Licensed under either of
