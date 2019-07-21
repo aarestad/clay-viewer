@@ -72,7 +72,9 @@ impl Window {
         let mut motion = Motion::new();
         let mut drop_mouse = true;
         let instant = Instant::now();
-        let mut now = instant.elapsed();
+        let mut prev = instant.elapsed();
+        let mut fps = -1.0;
+        let mut printed = instant.elapsed();
 
         let mut event_pump = self.context.event_pump()?;
         'main: loop {
@@ -116,10 +118,22 @@ impl Window {
 
             //thread::sleep(Duration::from_millis(20));
             
-            let new_now = instant.elapsed();
-            let dt = new_now - now;
+            let now = instant.elapsed();
+
+            let dt = now - prev;
             motion.step(dt);
-            now = new_now;
+            prev = now;
+
+            let cfps = 1e6/(dt.as_micros() as f64);
+            if fps < 0.0 {
+                fps = cfps;
+            } else {
+                fps = 0.95*fps + 0.05*cfps;
+            }
+            if (now - printed).as_secs() > 0 {
+                println!("FPS: {:.2}", fps);
+                printed = now;
+            }
         }
 
         Ok(())
