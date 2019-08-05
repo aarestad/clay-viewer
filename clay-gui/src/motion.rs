@@ -77,9 +77,11 @@ impl Motion {
         match event {
             Event::KeyDown { keycode: Some(key), .. } => if let Some(i) = key_idx(*key) {
                 self.key_mask |= 1 << i;
+                self.updated = true;
             },
             Event::KeyUp { keycode: Some(key), .. } => if let Some(i) = key_idx(*key) {
                 self.key_mask &= !(1 << i);
+                self.updated = true;
             },
             _ => (),
         }

@@ -1,7 +1,7 @@
 mod motion;
 
 use std::{
-    time::{Instant},
+    time::{Duration, Instant},
 };
 use sdl2::{
     self,
@@ -111,6 +111,11 @@ impl Window {
                 motion.updated = false;
             }
             render(&mut screen, motion.pos, motion.map())?;
+            let mut n_passes = 1;
+            while instant.elapsed() - prev < Duration::from_millis(20) {
+                render(&mut screen, motion.pos, motion.map())?;
+                n_passes += 1;
+            }
             let data = screen.read()?;
 
             texture.update(None, &data, 3*(screen.dims().0 as usize))
@@ -128,7 +133,7 @@ impl Window {
             motion.step(dt);
             prev = now;
 
-            let cfps = 1e6/(dt.as_micros() as f64);
+            let cfps = (n_passes as f64)*1e6/(dt.as_micros() as f64);
             if fps < 0.0 {
                 fps = cfps;
             } else {
