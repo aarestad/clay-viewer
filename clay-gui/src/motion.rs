@@ -55,7 +55,8 @@ fn key_dir(key: Keycode) -> (Vec3<f64>, Vec3<f64>) {
 }
 
 pub struct Motion {
-    key_mask: usize,
+    pub updated: bool,
+    pub key_mask: usize,
     pub pos: Vec3<f64>,
     pub phi: f64,
     pub theta: f64,
@@ -66,7 +67,7 @@ pub struct Motion {
 impl Motion {
     pub fn new() -> Self {
         Self {
-            key_mask: 0,
+            updated: false, key_mask: 0,
             pos: Vec3::zero(), phi: 0.0, theta: 0.5*PI,
             speed: 1.0, sens: 4e-3,
         }
@@ -85,17 +86,20 @@ impl Motion {
     }
 
     pub fn handle_mouse(&mut self, mouse: &RelativeMouseState) {
-        self.phi += self.sens*(mouse.x() as f64);
-        let t = (self.phi/(2.0*PI)).floor() as i32;
-        if t != 0 {
-            self.phi -= 2.0*PI*(t as f64);
-        }
+        if mouse.x() != 0 || mouse.y() != 0 {
+            self.phi += self.sens*(mouse.x() as f64);
+            let t = (self.phi/(2.0*PI)).floor() as i32;
+            if t != 0 {
+                self.phi -= 2.0*PI*(t as f64);
+            }
 
-        self.theta -= self.sens*(mouse.y() as f64);
-        if self.theta < 0.0 {
-            self.theta = 0.0;
-        } else if self.theta > PI {
-            self.theta = PI;
+            self.theta -= self.sens*(mouse.y() as f64);
+            if self.theta < 0.0 {
+                self.theta = 0.0;
+            } else if self.theta > PI {
+                self.theta = PI;
+            }
+            self.updated = true;
         }
     }
 

@@ -106,6 +106,10 @@ impl Window {
                 motion.handle_mouse(&rms);
             }
 
+            if motion.updated || motion.key_mask != 0 {
+                screen.clear()?;
+                motion.updated = false;
+            }
             render(&mut screen, motion.pos, motion.map())?;
             let data = screen.read()?;
 
