@@ -11,10 +11,7 @@ use sdl2::{
     event::Event,
     keyboard::Keycode,
 };
-use vecmat::{
-    vec::*,
-    mat::*,
-};
+use nalgebra::{Vector3, Rotation3};
 use clay_core::{Context, Screen};
 use motion::Motion;
 
@@ -57,7 +54,7 @@ impl Window {
     }
 
     pub fn start<F>(&mut self, context: &Context, mut render: F) -> clay_core::Result<()>
-    where F: FnMut(&mut Screen, Vec3<f64>, Mat3<f64>) -> clay_core::Result<()> {
+    where F: FnMut(&mut Screen, Vector3<f64>, Rotation3<f64>) -> clay_core::Result<()> {
         let mut screen = Screen::new(context, self.size).map_err(|e| e.to_string())?;
 
         let texture_creator = self.canvas.texture_creator();

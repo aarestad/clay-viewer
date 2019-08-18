@@ -1,17 +1,14 @@
 use std::{
     time::Duration,
     f64::consts::PI,
+
 };
 use sdl2::{
     event::Event,
     mouse::RelativeMouseState,
     keyboard::Keycode,
 };
-use vecmat::{
-    vec::*,
-    mat::*,
-};
-
+use nalgebra::{Vector3, Rotation3};
 
 fn clamp(x: f64, a: f64, b: f64) -> f64 {
     if x < a {
@@ -42,22 +39,22 @@ fn key_idx(key: Keycode) -> Option<usize> {
     KEYS.iter().position(|k| *k == key)
 }
 
-fn key_dir(key: Keycode) -> (Vec3<f64>, Vec3<f64>) {
+fn key_dir(key: Keycode) -> (Vector3<f64>, Vector3<f64>) {
     match key {
-        Keycode::W | Keycode::Up => (Vec3::from(0.0, 0.0, -1.0), Vec3::zero()),
-        Keycode::A | Keycode::Left => (Vec3::from(-1.0, 0.0, 0.0), Vec3::zero()),
-        Keycode::S | Keycode::Down => (Vec3::from(0.0, 0.0, 1.0), Vec3::zero()),
-        Keycode::D | Keycode::Right => (Vec3::from(1.0, 0.0, 0.0), Vec3::zero()),
-        Keycode::Space => (Vec3::zero(), Vec3::from(0.0, 0.0, 1.0)),
-        Keycode::LShift => (Vec3::zero(), Vec3::from(0.0, 0.0, -1.0)),
-        _ => (Vec3::zero(), Vec3::zero()),
+        Keycode::W | Keycode::Up => (Vector3::new(0.0, 0.0, -1.0), Vector3::zeros()),
+        Keycode::A | Keycode::Left => (Vector3::new(-1.0, 0.0, 0.0), Vector3::zeros()),
+        Keycode::S | Keycode::Down => (Vector3::new(0.0, 0.0, 1.0), Vector3::zeros()),
+        Keycode::D | Keycode::Right => (Vector3::new(1.0, 0.0, 0.0), Vector3::zeros()),
+        Keycode::Space => (Vector3::zeros(), Vector3::new(0.0, 0.0, 1.0)),
+        Keycode::LShift => (Vector3::zeros(), Vector3::new(0.0, 0.0, -1.0)),
+        _ => (Vector3::zeros(), Vector3::zeros()),
     }
 }
 
 pub struct Motion {
     pub updated: bool,
     pub key_mask: usize,
-    pub pos: Vec3<f64>,
+    pub pos: Vector3<f64>,
     pub phi: f64,
     pub theta: f64,
     pub speed: f64,
@@ -68,7 +65,7 @@ impl Motion {
     pub fn new() -> Self {
         Self {
             updated: false, key_mask: 0,
-            pos: Vec3::zero(), phi: 0.0, theta: 0.5*PI,
+            pos: Vector3::zeros(), phi: 0.0, theta: 0.5*PI,
             speed: 1.0, sens: 4e-3,
         }
     }
@@ -105,29 +102,25 @@ impl Motion {
         }
     }
 
-    pub fn map_theta(&self) -> Mat3<f64> {
-        let mut mat = Mat3::one();
-        mat[(1, 1)] = self.theta.cos();
-        mat[(1, 2)] = -self.theta.sin();
-        mat[(2, 1)] = self.theta.sin();
-        mat[(2, 2)] = self.theta.cos();
-        mat
+    pub fn map_theta(&self) -> Rotation3<f64> {
+        Rotation3::from_axis_angle(
+            &Vector3::x_axis(),
+            self.theta,
+        )
     }
-    pub fn map_phi(&self) -> Mat3<f64> {
-        let mut mat = Mat3::one();
-        mat[(0, 0)] = self.phi.cos();
-        mat[(0, 1)] = self.phi.sin();
-        mat[(1, 0)] = -self.phi.sin();
-        mat[(1, 1)] = self.phi.cos();
-        mat
+    pub fn map_phi(&self) -> Rotation3<f64> {
+        Rotation3::from_axis_angle(
+            &(-Vector3::z_axis()),
+            self.phi,
+        )
     }
 
-    pub fn map(&self) -> Mat3<f64> {
-        self.map_theta().dot(self.map_phi())
+    pub fn map(&self) -> Rotation3<f64> {
+        self.map_phi()*self.map_theta()
     }
 
     pub fn step(&mut self, dt: Duration) {
-        let (mut dir, mut idir) = (Vec3::zero(), Vec3::zero());
+        let (mut dir, mut idir) = (Vector3::zeros(), Vector3::zeros());
         for (i, k) in KEYS.iter().enumerate() {
             if ((self.key_mask >> i) & 1) != 0 {
                 let (dv, di) = key_dir(*k);
@@ -136,10 +129,10 @@ impl Motion {
             }
         }
         dir = dir.map(|x| clamp(x, -1.0, 1.0));
-        if dir.sqrlen() > 1e6 {
+        if dir.norm() > 1e-4 {
             dir = dir.normalize();
         }
-        dir = dir.dot(self.map());
+        dir = self.map()*dir;
         self.pos += 1e-6*(dt.as_micros() as f64)*self.speed*(dir + idir);
     }
 }

@@ -15,5 +15,5 @@ categories = ["graphics", "rendering", "multimedia"]
 
 [dependencies]
 clay-core = { path = "../clay-core" }
+nalgebra = "0.18"
 sdl2 = "0.32"
-vecmat = "0.4.0"
