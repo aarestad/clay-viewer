@@ -1,12 +1,26 @@
-# Clay
+# clay-gui
 
-OpenCL ray/path tracer project in Rust.
+Graphical interface for [Clay](https://github.com/nthend/clay).
 
-## Components
+## Usage
 
-The project contains:
-+ [clay](clay) - basic Euclidean-space ray/path tracer
-+ [clay-hyper](clay-hyper) - experimental ray/path tracer in Lobachevsky (hyperbolic) space
+### Controls
+
++ `W` or `↑` - move forward
++ `S` or `↓` - move backward
++ `A` or `←` - move left
++ `D` or `→` - move right
+
++ `Space` - move up
++ `LShift` - move down
+
++ `E` - tilt clockwise (only in zero-gravity mode)
++ `Q` - tilt counter-clockwise (only in zero-gravity mode)
+
++ `Tab` - toggle capture mode
++ `Esc` - exit
+
+In capture mode you can use mouse to look around.
 
 
 ## License
