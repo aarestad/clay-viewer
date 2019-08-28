@@ -1,6 +1,6 @@
 # clay-gui
 
-Graphical interface for [Clay](https://github.com/nthend/clay).
+Graphical viewer for [Clay](https://github.com/nthend/clay).
 
 ## Usage
 

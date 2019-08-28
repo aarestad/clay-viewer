@@ -5,23 +5,38 @@ use std::{
 };
 use sdl2::{
     self,
-    Sdl, VideoSubsystem,
-    render::{WindowCanvas, TextureAccess},
+    Sdl, VideoSubsystem, EventPump,
+    render::{WindowCanvas, TextureAccess, Texture},
     pixels::PixelFormatEnum,
     event::Event,
     keyboard::Keycode,
 };
 use nalgebra::{Vector3, Rotation3};
-use clay_core::{Context, Screen};
+use clay_core::{
+    Context, IdentityFilter,
+    Postproc, Renderer
+};
 use motion::Motion;
 
-#[allow(dead_code)]
 pub struct Window {
     context: Sdl,
     video: VideoSubsystem,
     size: (usize, usize),
     canvas: WindowCanvas,
     capture: bool,
+
+    texture: Texture,
+    event_pump: EventPump,
+    state: State,
+}
+
+struct State {
+    motion: Motion,
+    drop_mouse: bool,
+    instant: Instant,
+    prev: Duration,
+    fps: f64,
+    printed: Duration,
 }
 
 impl Window {
@@ -37,6 +52,14 @@ impl Window {
 
         context.mouse().set_relative_mouse_mode(true);
 
+        let texture_creator = self.canvas.texture_creator();
+        let texture = texture_creator.create_texture(
+            PixelFormatEnum::RGB24,
+            TextureAccess::Streaming,
+            size.0 as u32,
+            size.1 as u32,
+        ).map_err(|e| e.to_string())?;
+
         let mut self_ = Self {
             context, video,
             size, canvas,
@@ -48,24 +71,7 @@ impl Window {
         Ok(self_)
     }
 
-    fn toggle_capture(&mut self) {
-        self.capture = !self.capture;
-        self.context.mouse().set_relative_mouse_mode(self.capture);
-    }
-
-    pub fn start<F>(&mut self, context: &Context, mut render: F) -> clay_core::Result<()>
-    where F: FnMut(&mut Screen, Vector3<f64>, Rotation3<f64>) -> clay_core::Result<()> {
-        let mut screen = Screen::new(context, self.size).map_err(|e| e.to_string())?;
-
-        let texture_creator = self.canvas.texture_creator();
-        let mut texture = texture_creator.create_texture(
-            PixelFormatEnum::RGB24,
-            TextureAccess::Streaming,
-            self.size.0 as u32,
-            self.size.1 as u32,
-        )
-        .map_err(|e| e.to_string())?;
-
+    fn init_state() -> clay_core::Result<()> {
         let mut motion = Motion::new();
         let mut drop_mouse = true;
         let instant = Instant::now();
@@ -74,6 +80,24 @@ impl Window {
         let mut printed = instant.elapsed();
 
         let mut event_pump = self.context.event_pump()?;
+    } 
+
+    fn toggle_capture(&mut self) {
+        self.capture = !self.capture;
+        self.context.mouse().set_relative_mouse_mode(self.capture);
+    }
+
+    pub fn start<F>(&mut self, context: &Context, mut step: F) -> clay_core::Result<()>
+    where F: FnMut(&mut Renderer, Vector3<f64>, Rotation3<f64>) -> clay_core::Result<()> {
+        let mut screen = Postproc::<IdentityFilter>::builder()
+        .collect()?
+        .build(context, self.size, IdentityFilter::new())?;
+
+        
+
+        
+
+        
         'main: loop {
             for event in event_pump.poll_iter() {
                 match event {

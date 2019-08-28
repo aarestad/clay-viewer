@@ -1,11 +1,11 @@
 [package]
-name = "clay-gui"
+name = "clay-viewer"
 version = "0.0.1"
 authors = ["Alexey Gerasev <alexey.gerasev@gmail.com>"]
 license = "MIT/Apache-2.0"
 edition = "2018"
 
-description = "User interface for Clay - an OpenCL ray/path tracer"
+description = "Graphical viewer for Clay - an OpenCL ray/path tracer"
 homepage = "https://github.com/nthend/clay"
 repository = "https://github.com/nthend/clay"
 readme = "README.md"
@@ -14,7 +14,8 @@ keywords = ["ray-tracing", "path-tracing", "opencl"]
 categories = ["graphics", "rendering", "multimedia"]
 
 [dependencies]
-clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "57d53bcfd91e602ab3a62691518afee9b2250ff0" }
+#clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "57d53bcfd91e602ab3a62691518afee9b2250ff0" }
+clay-core = { path = "../clay-core" }
 nalgebra = "0.18"
 sdl2 = "0.32"
 
