@@ -15,9 +15,10 @@ use sdl2::{
     keyboard::Keycode,
 };
 use nalgebra::{Vector3, Rotation3};
-use clay_core::{Image};
+use clay_core::buffer::Image;
 
 use motion::Motion;
+
 
 rental! { mod rent {
     use sdl2::{

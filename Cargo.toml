@@ -1,6 +1,6 @@
 [package]
 name = "clay-viewer"
-version = "0.0.1"
+version = "0.0.2"
 authors = ["Alexey Gerasev <alexey.gerasev@gmail.com>"]
 license = "MIT/Apache-2.0"
 edition = "2018"
@@ -14,7 +14,7 @@ keywords = ["ray-tracing", "path-tracing", "opencl"]
 categories = ["graphics", "rendering", "multimedia"]
 
 [dependencies]
-clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "2e08f9cc78f8f0657faa7c94b8fd038cde35ebeb" }
+clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "14a3a4a1893e7658adad6b9167ed9326e0b91886" }
 #clay-core = { path = "../clay-core" }
 
 nalgebra = "0.18"
