@@ -5,10 +5,12 @@ use std::{
 };
 use sdl2::{
     event::Event,
-    mouse::RelativeMouseState,
+    mouse::{MouseState, RelativeMouseState},
     keyboard::Keycode,
 };
 use nalgebra::{Vector3, Rotation3};
+use crate::{WindowState, EventHandler};
+
 
 fn clamp(x: f64, a: f64, b: f64) -> f64 {
     if x < a {
@@ -54,23 +56,35 @@ fn key_dir(key: Keycode) -> (Vector3<f64>, Vector3<f64>) {
 pub struct Motion {
     pub updated: bool,
     pub key_mask: usize,
+
     pub pos: Vector3<f64>,
+
+    // Euler angles
     pub phi: f64,
     pub theta: f64,
+
     pub speed: f64,
     pub sens: f64,
 }
 
 impl Motion {
-    pub fn new() -> Self {
+    pub fn new(pos: Vector3<f64>, ori: Rotation3<f64>) -> Self {
+        let (theta, _, phi) = ori.euler_angles();
         Self {
             updated: false, key_mask: 0,
-            pos: Vector3::zeros(), phi: 0.0, theta: 0.5*PI,
+            pos, phi, theta,
             speed: 1.0, sens: 4e-3,
         }
     }
 
-    pub fn handle_keys(&mut self, event: &Event) {
+    pub fn set_speed(&mut self, speed: f64) {
+        self.speed = speed;
+    }
+    pub fn set_sensitivity(&mut self, sens: f64) {
+        self.sens = sens;
+    }
+
+    fn handle_keys(&mut self, event: &Event) {
         match event {
             Event::KeyDown { keycode: Some(key), .. } => if let Some(i) = key_idx(*key) {
                 self.key_mask |= 1 << i;
@@ -84,9 +98,9 @@ impl Motion {
         }
     }
 
-    pub fn handle_mouse(&mut self, mouse: &RelativeMouseState) {
+    fn handle_mouse(&mut self, mouse: &RelativeMouseState) {
         if mouse.x() != 0 || mouse.y() != 0 {
-            self.phi += self.sens*(mouse.x() as f64);
+            self.phi -= self.sens*(mouse.x() as f64);
             let t = (self.phi/(2.0*PI)).floor() as i32;
             if t != 0 {
                 self.phi -= 2.0*PI*(t as f64);
@@ -102,21 +116,15 @@ impl Motion {
         }
     }
 
-    pub fn map_theta(&self) -> Rotation3<f64> {
-        Rotation3::from_axis_angle(
-            &Vector3::x_axis(),
-            self.theta,
-        )
+    pub fn pos(&self) -> Vector3<f64> {
+        self.pos.clone()
     }
-    pub fn map_phi(&self) -> Rotation3<f64> {
-        Rotation3::from_axis_angle(
-            &(-Vector3::z_axis()),
-            self.phi,
-        )
+    pub fn ori(&self) -> Rotation3<f64> {
+        Rotation3::from_euler_angles(self.theta, 0.0, self.phi)
     }
 
-    pub fn map(&self) -> Rotation3<f64> {
-        self.map_phi()*self.map_theta()
+    pub fn was_updated(&self) -> bool {
+        self.updated || self.key_mask != 0
     }
 
     pub fn step(&mut self, dt: Duration) {
@@ -132,7 +140,27 @@ impl Motion {
         if dir.norm() > 1e-4 {
             dir = dir.normalize();
         }
-        dir = self.map()*dir;
+        dir = self.ori()*dir;
         self.pos += 1e-6*(dt.as_micros() as f64)*self.speed*(dir + idir);
+
+        self.updated = false;
+    }
+}
+
+impl EventHandler for Motion {
+    fn handle_keys(&mut self, _state: &WindowState, event: &Event) -> clay_core::Result<()> {
+        self.handle_keys(event);
+        Ok(())
+    }
+    fn handle_mouse(
+        &mut self, state: &WindowState,
+        ms: &MouseState, rms: &RelativeMouseState,
+    ) -> clay_core::Result<()> {
+        if state.capture {
+            self.handle_mouse(&rms);
+        } else if ms.left() {
+            self.handle_mouse(&rms);
+        }
+        Ok(())
     }
 }
