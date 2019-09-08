@@ -17,6 +17,8 @@ Graphical viewer for [Clay](https://github.com/nthend/clay).
 + `E` - tilt clockwise (only in zero-gravity mode)
 + `Q` - tilt counter-clockwise (only in zero-gravity mode)
 
++ `P` make screenshot (`Shift + P` to save lossless image).
+
 + `Tab` - toggle capture mode
 + `Esc` - exit
 

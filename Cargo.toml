@@ -14,9 +14,10 @@ keywords = ["ray-tracing", "path-tracing", "opencl"]
 categories = ["graphics", "rendering", "multimedia"]
 
 [dependencies]
-clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "c64517447f2a7e33f0744e8d7352bc398f0cf580" }
+clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "c6e3ce379d6a883917bd2f26d48336c2d679e8de" }
 #clay-core = { path = "../clay-core" }
 
 nalgebra = "0.18"
 sdl2 = "0.32"
 rental = "0.5.4"
+image = "0.22.2"

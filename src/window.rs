@@ -7,10 +7,12 @@ use sdl2::{
     render::{WindowCanvas, TextureAccess},
     pixels::PixelFormatEnum,
     event::Event,
-    keyboard::Keycode,
+    keyboard::{Keycode, Scancode},
     mouse::{MouseState, RelativeMouseState},
 };
 use clay_core::buffer::Image;
+
+use crate::output::save_screenshot;
 
 
 rental! { mod rent {
@@ -45,6 +47,7 @@ pub struct WindowState {
     instant: Instant,
     pub previous: Duration,
     pub current: Duration,
+    screenshot: Option<bool>,
 }
 
 pub trait EventHandler {
@@ -74,6 +77,7 @@ impl WindowState {
             instant,
             previous: time,
             current: time,
+            screenshot: None,
         }
     }
 
@@ -137,6 +141,7 @@ impl Window {
     ) -> clay_core::Result<bool> {
         self.state.step_frame();
 
+        let mut screenshot = false;
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} => { return Ok(true); },
@@ -147,6 +152,9 @@ impl Window {
                         if self.state.capture {
                             self.state.drop_mouse = true;
                         }
+                    },
+                    Keycode::P => {
+                        screenshot = true;
                     },
                     _ => (),
                 },
@@ -163,6 +171,14 @@ impl Window {
             )?;
         } else {
             self.state.drop_mouse = false;
+        }
+
+        if screenshot {
+            let kbs = event_pump.keyboard_state();
+            self.state.screenshot = Some(
+                kbs.is_scancode_pressed(Scancode::LShift) ||
+                kbs.is_scancode_pressed(Scancode::RShift)
+            );
         }
 
         Ok(false)
@@ -187,13 +203,21 @@ impl Window {
         self.size
     }
 
-    pub fn draw(&mut self, image: &Image) -> clay_core::Result<()> {
+    pub fn draw(&mut self, img: &Image) -> clay_core::Result<()> {
         let mut texture = self.texture.take().unwrap();
 
-        let res = image.read()
+        let res = img.read()
         .and_then(|data| {
+            if let Some(ll) = self.state.screenshot {
+                println!("saving screenshot ...");
+                match save_screenshot(&data, self.size, ll) {
+                    Ok(f) => println!("... saved to '{}'", f),
+                    Err(e) => eprintln!("error saving screenshot: {}", e),
+                }
+                self.state.screenshot = None;
+            }
             texture.rent_mut(|texture| {
-                texture.update(None, &data, 3*(image.dims().0 as usize))
+                texture.update(None, &data, 3*img.dims().0)
             }).map_err(|e| clay_core::Error::from(e.to_string()))
         })
         .and_then(|()| {
