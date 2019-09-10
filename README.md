@@ -1,6 +1,21 @@
 # clay-gui
 
-Graphical viewer for [Clay](https://github.com/nthend/clay).
+[![Crates.io][crates_badge]][crates]
+[![Docs.rs][docs_badge]][docs]
+[![Travis CI][travis_badge]][travis]
+[![License][license_badge]][license]
+
+[crates_badge]: https://img.shields.io/crates/v/clay-viewer.svg
+[docs_badge]: https://docs.rs/clay-viewer/badge.svg
+[travis_badge]: https://api.travis-ci.org/clay-rs/clay-viewer.svg?branch=master
+[license_badge]: https://img.shields.io/crates/l/clay-viewer.svg
+
+[crates]: https://crates.io/crates/clay-viewer
+[docs]: https://docs.rs/clay-viewer
+[travis]: https://travis-ci.org/clay-rs/clay-viewer
+[license]: #license
+
+Graphical viewer for [Clay project](https://clay-rs.github.io/).
 
 ## Usage
 
@@ -23,7 +38,6 @@ Graphical viewer for [Clay](https://github.com/nthend/clay).
 + `Esc` - exit
 
 In capture mode you can use mouse to look around.
-
 
 ## License
 
