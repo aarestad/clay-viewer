@@ -1,0 +1,25 @@
+[package]
+name = "clay-viewer"
+version = "0.1.0"
+authors = ["Alexey Gerasev <alexey.gerasev@gmail.com>"]
+license = "MIT/Apache-2.0"
+edition = "2018"
+
+description = "Graphical viewer for Clay - fast, modular and extendable ray tracer"
+homepage = "https://clay-rs.github.io/"
+repository = "https://github.com/clay-rs/clay-viewer"
+
+keywords = ["ray-tracing", "opencl"]
+categories = ["graphics", "rendering", "multimedia"]
+
+readme = "README.md"
+
+[dependencies]
+nalgebra = "0.18"
+sdl2 = "0.32"
+rental = "0.5.4"
+image = "0.22.2"
+
+clay-core = "0.1"
+#clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "c6e3ce379d6a883917bd2f26d48336c2d679e8de" }
+#clay-core = { path = "../clay-core" }
