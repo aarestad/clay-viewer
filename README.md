@@ -27,17 +27,18 @@ Graphical viewer for [Clay project](https://clay-rs.github.io/).
 + `D` or `→` - move right
 
 + `Space` - move up
-+ `LShift` - move down
++ `C` - move down
 
 + `E` - tilt clockwise (only in zero-gravity mode)
 + `Q` - tilt counter-clockwise (only in zero-gravity mode)
 
-+ `P` make screenshot (`Shift + P` to save lossless image).
++ `P` - make screenshot (`Shift + P` to save lossless image)
++ `L` - lock motion (`Shift + L` to unlock) - to prevent statistics reset
 
 + `Tab` - toggle capture mode
 + `Esc` - exit
 
-In capture mode you can use mouse to look around.
+You can use mouse to look around (+ LMB in non-capture mode) and mouse wheel to tune FOV.
 
 ## License
 

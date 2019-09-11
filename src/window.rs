@@ -41,6 +41,7 @@ pub struct Window {
 }
 
 pub struct WindowState {
+    pub lock: bool,
     pub capture: bool,
     pub drop_mouse: bool,
     // time measurement
@@ -72,6 +73,7 @@ impl WindowState {
         let instant = Instant::now();
         let time = instant.elapsed();
         Self {
+            lock: false,
             capture: true,
             drop_mouse: true,
             instant,
@@ -126,6 +128,7 @@ impl Window {
         };
 
         self_.set_capture_mode(false);
+        self_.unlock();
 
         Ok(self_)
     }
@@ -135,50 +138,84 @@ impl Window {
         self.context.mouse().set_relative_mouse_mode(state);
     }
 
+    pub fn lock(&mut self) {
+        self.state.lock = true;
+        self.context.mouse().set_relative_mouse_mode(false);
+        self.canvas.window_mut().set_title("Clay [LOCKED]").unwrap();
+    }
+
+    pub fn unlock(&mut self) {
+        self.state.lock = false;
+        self.context.mouse().set_relative_mouse_mode(self.state.capture);
+        self.canvas.window_mut().set_title("Clay").unwrap();
+    }
+
+    pub fn locked(&self) -> bool {
+        self.state.lock
+    }
+
     fn poll_inner(
         &mut self, handler: &mut dyn EventHandler,
         event_pump: &mut EventPump,
     ) -> clay_core::Result<bool> {
         self.state.step_frame();
 
-        let mut screenshot = false;
-        for event in event_pump.poll_iter() {
+        'event_loop: loop {
+            let event = match event_pump.poll_event() {
+                Some(evt) => evt,
+                None => break 'event_loop,
+            };
+            let kbs = event_pump.keyboard_state();
+            let shift =
+            kbs.is_scancode_pressed(Scancode::LShift) ||
+            kbs.is_scancode_pressed(Scancode::RShift);
+
             match event {
                 Event::Quit {..} => { return Ok(true); },
                 Event::KeyDown { keycode: Some(key), .. } => match key {
                     Keycode::Escape => { return Ok(true); },
                     Keycode::Tab => {
-                        self.set_capture_mode(!self.state.capture);
-                        if self.state.capture {
-                            self.state.drop_mouse = true;
+                        if !self.locked() {
+                            self.set_capture_mode(!self.state.capture);
+                            if self.state.capture {
+                                self.state.drop_mouse = true;
+                            }
                         }
                     },
                     Keycode::P => {
-                        screenshot = true;
+                        self.state.screenshot = Some(shift);
+                    },
+                    Keycode::L => {
+                        if !shift {
+                            self.lock();
+                        } else {
+                            self.unlock();
+                            if self.state.capture {
+                                self.state.drop_mouse = true;
+                            }
+                        }
                     },
                     _ => (),
                 },
                 _ => (),
             }
-            handler.handle_keys(&self.state, &event)?;
+
+            if !self.locked() {
+                handler.handle_keys(&self.state, &event)?;
+            }
         }
 
-        if !self.state.drop_mouse {
-            handler.handle_mouse(
-                &self.state,
-                &event_pump.mouse_state(),
-                &event_pump.relative_mouse_state(),
-            )?;
-        } else {
-            self.state.drop_mouse = false;
-        }
-
-        if screenshot {
-            let kbs = event_pump.keyboard_state();
-            self.state.screenshot = Some(
-                kbs.is_scancode_pressed(Scancode::LShift) ||
-                kbs.is_scancode_pressed(Scancode::RShift)
-            );
+        if !self.locked() {
+            if !self.state.drop_mouse {
+                handler.handle_mouse(
+                    &self.state,
+                    &event_pump.mouse_state(),
+                    &event_pump.relative_mouse_state(),
+                )?;
+            } else {
+                event_pump.relative_mouse_state();
+                self.state.drop_mouse = false;
+            }
         }
 
         Ok(false)
