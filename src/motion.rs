@@ -32,7 +32,7 @@ const KEYS: [Keycode; 12] = [
     Keycode::D,
     Keycode::Right,
     Keycode::Space,
-    Keycode::LShift,
+    Keycode::C,
     Keycode::Q,
     Keycode::E,
 ];
@@ -48,7 +48,7 @@ fn key_dir(key: Keycode) -> (Vector3<f64>, Vector3<f64>) {
         Keycode::S | Keycode::Down => (Vector3::new(0.0, 0.0, 1.0), Vector3::zeros()),
         Keycode::D | Keycode::Right => (Vector3::new(1.0, 0.0, 0.0), Vector3::zeros()),
         Keycode::Space => (Vector3::zeros(), Vector3::new(0.0, 0.0, 1.0)),
-        Keycode::LShift => (Vector3::zeros(), Vector3::new(0.0, 0.0, -1.0)),
+        Keycode::C => (Vector3::zeros(), Vector3::new(0.0, 0.0, -1.0)),
         _ => (Vector3::zeros(), Vector3::zeros()),
     }
 }
@@ -65,6 +65,9 @@ pub struct Motion {
 
     pub speed: f64,
     pub sens: f64,
+
+    pub fov: f64,
+    pub fov_sens: f64,
 }
 
 impl Motion {
@@ -74,6 +77,7 @@ impl Motion {
             updated: false, key_mask: 0,
             pos, phi, theta,
             speed: 1.0, sens: 4e-3,
+            fov: 1.0, fov_sens: 1e-1,
         }
     }
 
@@ -94,6 +98,12 @@ impl Motion {
                 self.key_mask &= !(1 << i);
                 self.updated = true;
             },
+            Event::MouseWheel { y, .. } => {
+                if *y != 0 {
+                    self.fov *= (self.fov_sens*(-*y as f64)).exp();
+                    self.updated = true;
+                }
+            }
             _ => (),
         }
     }
