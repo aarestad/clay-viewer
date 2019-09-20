@@ -12,7 +12,7 @@ use sdl2::{
 };
 use clay_core::buffer::Image;
 
-use crate::output::save_screenshot;
+use clay_utils::save_screenshot;
 
 
 rental! { mod rent {
@@ -158,8 +158,6 @@ impl Window {
         &mut self, handler: &mut dyn EventHandler,
         event_pump: &mut EventPump,
     ) -> clay_core::Result<bool> {
-        self.state.step_frame();
-
         'event_loop: loop {
             let event = match event_pump.poll_event() {
                 Some(evt) => evt,
@@ -236,6 +234,11 @@ impl Window {
         &self.state
     }
 
+    pub fn step_frame(&mut self) -> Duration {
+        self.state.step_frame();
+        self.state.frame_duration()
+    }
+
     pub fn size(&self) -> (usize, usize) {
         self.size
     }
@@ -243,16 +246,17 @@ impl Window {
     pub fn draw(&mut self, img: &Image) -> clay_core::Result<()> {
         let mut texture = self.texture.take().unwrap();
 
+        if let Some(ll) = self.state.screenshot {
+            println!("saving screenshot ...");
+            match save_screenshot(img, ll) {
+                Ok(f) => println!("... saved to '{}'", f),
+                Err(e) => eprintln!("error saving screenshot: {}", e),
+            }
+            self.state.screenshot = None;
+        }
+
         let res = img.read()
         .and_then(|data| {
-            if let Some(ll) = self.state.screenshot {
-                println!("saving screenshot ...");
-                match save_screenshot(&data, self.size, ll) {
-                    Ok(f) => println!("... saved to '{}'", f),
-                    Err(e) => eprintln!("error saving screenshot: {}", e),
-                }
-                self.state.screenshot = None;
-            }
             texture.rent_mut(|texture| {
                 texture.update(None, &data, 3*img.dims().0)
             }).map_err(|e| clay_core::Error::from(e.to_string()))
