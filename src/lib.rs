@@ -1,9 +1,8 @@
-mod window;
 mod motion;
+mod window;
 
-pub use window::*;
 pub use motion::*;
-
+pub use window::*;
 
 #[macro_use]
-extern crate rental; 
+extern crate rental;

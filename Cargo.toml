@@ -19,10 +19,10 @@ nalgebra = "0.18"
 sdl2 = "0.32"
 rental = "0.5.4"
 
-clay-core = "^0.1.2"
+#clay-core = "^0.1.2"
 #clay-core = { git = "https://github.com/clay-rs/clay-core.git", rev = "c6e3ce379d6a883917bd2f26d48336c2d679e8de" }
-#clay-core = { path = "../clay-core" }
+clay-core = { path = "../clay-core" }
 
-clay-utils = "^0.1.1"
+#clay-utils = "^0.1.1"
 #clay-utils = { git = "https://github.com/clay-rs/clay-utils.git", rev = "09b920798c9b3f08f8703910a62a5b26c6c19139" }
-#clay-utils = { path = "../clay-utils" }
+clay-utils = { path = "../clay-utils" }

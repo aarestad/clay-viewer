@@ -1,19 +1,16 @@
-use std::{
-    time::{Duration, Instant},
-};
+use clay_core::buffer::Image;
 use sdl2::{
     self,
-    Sdl, EventPump,
-    render::{WindowCanvas, TextureAccess},
-    pixels::PixelFormatEnum,
     event::Event,
     keyboard::{Keycode, Scancode},
     mouse::{MouseState, RelativeMouseState},
+    pixels::PixelFormatEnum,
+    render::{TextureAccess, WindowCanvas},
+    EventPump, Sdl,
 };
-use clay_core::buffer::Image;
+use std::time::{Duration, Instant};
 
 use clay_utils::save_screenshot;
-
 
 rental! { mod rent {
     use sdl2::{
@@ -27,8 +24,7 @@ rental! { mod rent {
         texture: Texture<'creator>,
     }
 }}
-use rent::{RentTexture};
-
+use rent::RentTexture;
 
 pub struct Window {
     context: Sdl,
@@ -54,18 +50,26 @@ pub struct WindowState {
 pub trait EventHandler {
     fn handle_keys(&mut self, state: &WindowState, event: &Event) -> clay_core::Result<()>;
     fn handle_mouse(
-        &mut self, state: &WindowState,
-        ms: &MouseState, rms: &RelativeMouseState,
+        &mut self,
+        state: &WindowState,
+        ms: &MouseState,
+        rms: &RelativeMouseState,
     ) -> clay_core::Result<()>;
 }
 
 struct DummyHandler();
 impl EventHandler for DummyHandler {
-    fn handle_keys(&mut self, _state: &WindowState, _event: &Event) -> clay_core::Result<()> { Ok(()) }
+    fn handle_keys(&mut self, _state: &WindowState, _event: &Event) -> clay_core::Result<()> {
+        Ok(())
+    }
     fn handle_mouse(
-        &mut self, _state: &WindowState,
-        _ms: &MouseState, _rms: &RelativeMouseState,
-    ) -> clay_core::Result<()> { Ok(()) }
+        &mut self,
+        _state: &WindowState,
+        _ms: &MouseState,
+        _rms: &RelativeMouseState,
+    ) -> clay_core::Result<()> {
+        Ok(())
+    }
 }
 
 impl WindowState {
@@ -97,11 +101,13 @@ impl Window {
     pub fn new(size: (usize, usize)) -> clay_core::Result<Self> {
         let context = sdl2::init()?;
         let video = context.video()?;
-     
-        let window = video.window("Clay", size.0 as u32, size.1 as u32)
-        .position_centered()/*.resizable()*/.build()
-        .map_err(|e| e.to_string())?;
-     
+
+        let window = video
+            .window("Clay", size.0 as u32, size.1 as u32)
+            .position_centered() /*.resizable()*/
+            .build()
+            .map_err(|e| e.to_string())?;
+
         let canvas = window.into_canvas().build().map_err(|e| e.to_string())?;
 
         context.mouse().set_relative_mouse_mode(true);
@@ -115,15 +121,19 @@ impl Window {
                     TextureAccess::Streaming,
                     size.0 as u32,
                     size.1 as u32,
-                ).map_err(|e| e.to_string())
-            }
+                )
+                .map_err(|e| e.to_string())
+            },
         )?);
 
         let event_pump = Some(context.event_pump()?);
 
         let mut self_ = Self {
-            context, size, canvas,
-            texture, event_pump,
+            context,
+            size,
+            canvas,
+            texture,
+            event_pump,
             state: WindowState::new(),
         };
 
@@ -146,7 +156,9 @@ impl Window {
 
     pub fn unlock(&mut self) {
         self.state.lock = false;
-        self.context.mouse().set_relative_mouse_mode(self.state.capture);
+        self.context
+            .mouse()
+            .set_relative_mouse_mode(self.state.capture);
         self.canvas.window_mut().set_title("Clay").unwrap();
     }
 
@@ -155,7 +167,8 @@ impl Window {
     }
 
     fn poll_inner(
-        &mut self, handler: &mut dyn EventHandler,
+        &mut self,
+        handler: &mut dyn EventHandler,
         event_pump: &mut EventPump,
     ) -> clay_core::Result<bool> {
         'event_loop: loop {
@@ -164,14 +177,19 @@ impl Window {
                 None => break 'event_loop,
             };
             let kbs = event_pump.keyboard_state();
-            let shift =
-            kbs.is_scancode_pressed(Scancode::LShift) ||
-            kbs.is_scancode_pressed(Scancode::RShift);
+            let shift = kbs.is_scancode_pressed(Scancode::LShift)
+                || kbs.is_scancode_pressed(Scancode::RShift);
 
             match event {
-                Event::Quit {..} => { return Ok(true); },
-                Event::KeyDown { keycode: Some(key), .. } => match key {
-                    Keycode::Escape => { return Ok(true); },
+                Event::Quit { .. } => {
+                    return Ok(true);
+                }
+                Event::KeyDown {
+                    keycode: Some(key), ..
+                } => match key {
+                    Keycode::Escape => {
+                        return Ok(true);
+                    }
                     Keycode::Tab => {
                         if !self.locked() {
                             self.set_capture_mode(!self.state.capture);
@@ -179,10 +197,10 @@ impl Window {
                                 self.state.drop_mouse = true;
                             }
                         }
-                    },
+                    }
                     Keycode::P => {
                         self.state.screenshot = Some(shift);
-                    },
+                    }
                     Keycode::L => {
                         if !shift {
                             self.lock();
@@ -192,7 +210,7 @@ impl Window {
                                 self.state.drop_mouse = true;
                             }
                         }
-                    },
+                    }
                     _ => (),
                 },
                 _ => (),
@@ -255,23 +273,26 @@ impl Window {
             self.state.screenshot = None;
         }
 
-        let res = img.read()
-        .and_then(|data| {
-            texture.rent_mut(|texture| {
-                texture.update(None, &data, 3*img.dims().0)
-            }).map_err(|e| clay_core::Error::from(e.to_string()))
-        })
-        .and_then(|()| {
-            //self.canvas.clear();
-            texture.rent(|texture| {
-                self.canvas.copy(texture, None, None)
-                .map_err(|e| clay_core::Error::from(e))
+        let res = img
+            .read()
+            .and_then(|data| {
+                texture
+                    .rent_mut(|texture| texture.update(None, &data, 3 * img.dims().0))
+                    .map_err(|e| clay_core::Error::from(e.to_string()))
             })
-            .map(|()| self.canvas.present())
-        });
+            .and_then(|()| {
+                //self.canvas.clear();
+                texture
+                    .rent(|texture| {
+                        self.canvas
+                            .copy(texture, None, None)
+                            .map_err(|e| clay_core::Error::from(e))
+                    })
+                    .map(|()| self.canvas.present())
+            });
 
         assert!(self.texture.replace(texture).is_none());
 
         res
     }
-} 
+}

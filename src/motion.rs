@@ -1,26 +1,11 @@
-use std::{
-    time::Duration,
-    f64::consts::PI,
-
-};
+use crate::{EventHandler, WindowState};
+use nalgebra::{Rotation3, Vector3};
 use sdl2::{
     event::Event,
-    mouse::{MouseState, RelativeMouseState},
     keyboard::Keycode,
+    mouse::{MouseState, RelativeMouseState},
 };
-use nalgebra::{Vector3, Rotation3};
-use crate::{WindowState, EventHandler};
-
-
-fn clamp(x: f64, a: f64, b: f64) -> f64 {
-    if x < a {
-        a
-    } else if x > b {
-        b
-    } else {
-        x
-    }
-}
+use std::{f64::consts::PI, time::Duration};
 
 const KEYS: [Keycode; 12] = [
     Keycode::W,
@@ -74,10 +59,15 @@ impl Motion {
     pub fn new(pos: Vector3<f64>, ori: Rotation3<f64>) -> Self {
         let (theta, _, phi) = ori.euler_angles();
         Self {
-            updated: false, key_mask: 0,
-            pos, phi, theta,
-            speed: 1.0, sens: 4e-3,
-            fov: 1.0, fov_sens: 1e-1,
+            updated: false,
+            key_mask: 0,
+            pos,
+            phi,
+            theta,
+            speed: 1.0,
+            sens: 4e-3,
+            fov: 1.0,
+            fov_sens: 1e-1,
         }
     }
 
@@ -90,17 +80,25 @@ impl Motion {
 
     fn handle_keys(&mut self, event: &Event) {
         match event {
-            Event::KeyDown { keycode: Some(key), .. } => if let Some(i) = key_idx(*key) {
-                self.key_mask |= 1 << i;
-                self.updated = true;
-            },
-            Event::KeyUp { keycode: Some(key), .. } => if let Some(i) = key_idx(*key) {
-                self.key_mask &= !(1 << i);
-                self.updated = true;
-            },
+            Event::KeyDown {
+                keycode: Some(key), ..
+            } => {
+                if let Some(i) = key_idx(*key) {
+                    self.key_mask |= 1 << i;
+                    self.updated = true;
+                }
+            }
+            Event::KeyUp {
+                keycode: Some(key), ..
+            } => {
+                if let Some(i) = key_idx(*key) {
+                    self.key_mask &= !(1 << i);
+                    self.updated = true;
+                }
+            }
             Event::MouseWheel { y, .. } => {
                 if *y != 0 {
-                    self.fov *= (self.fov_sens*(-*y as f64)).exp();
+                    self.fov *= (self.fov_sens * (-*y as f64)).exp();
                     self.updated = true;
                 }
             }
@@ -110,13 +108,13 @@ impl Motion {
 
     fn handle_mouse(&mut self, mouse: &RelativeMouseState) {
         if mouse.x() != 0 || mouse.y() != 0 {
-            self.phi -= self.sens*(mouse.x() as f64);
-            let t = (self.phi/(2.0*PI)).floor() as i32;
+            self.phi -= self.sens * (mouse.x() as f64);
+            let t = (self.phi / (2.0 * PI)).floor() as i32;
             if t != 0 {
-                self.phi -= 2.0*PI*(t as f64);
+                self.phi -= 2.0 * PI * (t as f64);
             }
 
-            self.theta -= self.sens*(mouse.y() as f64);
+            self.theta -= self.sens * (mouse.y() as f64);
             if self.theta < 0.0 {
                 self.theta = 0.0;
             } else if self.theta > PI {
@@ -129,6 +127,7 @@ impl Motion {
     pub fn pos(&self) -> Vector3<f64> {
         self.pos.clone()
     }
+
     pub fn ori(&self) -> Rotation3<f64> {
         Rotation3::from_euler_angles(self.theta, 0.0, self.phi)
     }
@@ -146,12 +145,12 @@ impl Motion {
                 idir += di;
             }
         }
-        dir = dir.map(|x| clamp(x, -1.0, 1.0));
+        dir = dir.map(|x| x.clamp(-1.0, 1.0));
         if dir.norm() > 1e-4 {
             dir = dir.normalize();
         }
-        dir = self.ori()*dir;
-        self.pos += 1e-6*(dt.as_micros() as f64)*self.speed*(dir + idir);
+        dir = self.ori() * dir;
+        self.pos += 1e-6 * (dt.as_micros() as f64) * self.speed * (dir + idir);
 
         self.updated = false;
     }
@@ -163,8 +162,10 @@ impl EventHandler for Motion {
         Ok(())
     }
     fn handle_mouse(
-        &mut self, state: &WindowState,
-        ms: &MouseState, rms: &RelativeMouseState,
+        &mut self,
+        state: &WindowState,
+        ms: &MouseState,
+        rms: &RelativeMouseState,
     ) -> clay_core::Result<()> {
         if state.capture {
             self.handle_mouse(&rms);
